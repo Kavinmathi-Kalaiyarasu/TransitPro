@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransitPro — Smart Public Transportation</title>
+    <meta name="description" content="Smart Public Transportation Route Optimization System — Manage stops, buses, demands and allocations.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* =====================================================
+           CSS RESET & VARIABLES
+           ===================================================== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a14;
+            --bg-secondary: #10101e;
+            --bg-card: #161628;
+            --bg-card-hover: #1c1c34;
+            --bg-sidebar: #0e0e1a;
+            --bg-input: #1e1e36;
+            --bg-input-focus: #24243e;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a8;
+            --text-muted: #555570;
+            --border: #2a2a44;
+            --border-light: #333354;
+            --accent-blue: #4f6ef7;
+            --accent-blue-glow: rgba(79, 110, 247, 0.25);
+            --accent-green: #22c55e;
+            --accent-green-glow: rgba(34, 197, 94, 0.2);
+            --accent-orange: #f59e0b;
+            --accent-orange-glow: rgba(245, 158, 11, 0.2);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.2);
+            --accent-purple: #a855f7;
+            --accent-purple-glow: rgba(168, 85, 247, 0.2);
+            --accent-cyan: #06b6d4;
+            --accent-cyan-glow: rgba(6, 182, 212, 0.2);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-card: 0 4px 24px rgba(0,0,0,0.3);
+            --shadow-glow: 0 0 30px rgba(79, 110, 247, 0.08);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* =====================================================
+           SCROLLBAR
+           ===================================================== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+        /* =====================================================
+           SIDEBAR
+           ===================================================== */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar-logo {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-logo-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: 800;
+            box-shadow: 0 4px 16px var(--accent-blue-glow);
+        }
+
+        .logo-text {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 500;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            padding: 8px 14px 10px;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn:hover {
+            background: rgba(79, 110, 247, 0.08);
+            color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, rgba(79, 110, 247, 0.15), rgba(168, 85, 247, 0.1));
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .nav-btn.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 0 3px 3px 0;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* =====================================================
+           MAIN CONTENT
+           ===================================================== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: 64px;
+            min-height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .top-badge {
+            font-size: 12px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--accent-green);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+        }
+
+        /* =====================================================
+           SCREENS
+           ===================================================== */
+        .screen {
+            display: none;
+            animation: fadeIn 0.35s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .screen-header {
+            margin-bottom: 28px;
+        }
+
+        .screen-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .screen-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* =====================================================
+           DASHBOARD STAT CARDS
+           ===================================================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 22px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .stat-card.blue::after   { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+        .stat-card.purple::after { background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
+        .stat-card.green::after  { background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); }
+        .stat-card.orange::after { background: linear-gradient(90deg, var(--accent-orange), var(--accent-red)); }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+
+        .stat-card.blue .stat-icon   { background: var(--accent-blue-glow); color: var(--accent-blue); }
+        .stat-card.purple .stat-icon { background: var(--accent-purple-glow); color: var(--accent-purple); }
+        .stat-card.green .stat-icon  { background: var(--accent-green-glow); color: var(--accent-green); }
+        .stat-card.orange .stat-icon { background: var(--accent-orange-glow); color: var(--accent-orange); }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-card.blue .stat-value   { color: var(--accent-blue); }
+        .stat-card.purple .stat-value { color: var(--accent-purple); }
+        .stat-card.green .stat-value  { color: var(--accent-green); }
+        .stat-card.orange .stat-value { color: var(--accent-orange); }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* =====================================================
+           INFO CARD
+           ===================================================== */
+        .info-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 24px 28px;
+        }
+
+        .info-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-card li {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .info-card li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* =====================================================
+           SPLIT LAYOUT (table + form)
+           ===================================================== */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* =====================================================
+           TABLE STYLES
+           ===================================================== */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .table-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-card-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .table-count {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: var(--accent-blue-glow);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(79, 110, 247, 0.06);
+        }
+
+        th {
+            font-size: 11.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            text-align: left;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            font-size: 13.5px;
+            padding: 13px 20px;
+            border-bottom: 1px solid rgba(42, 42, 68, 0.5);
+            color: var(--text-primary);
+        }
+
+        tbody tr {
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            background: rgba(79, 110, 247, 0.04);
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(22, 22, 40, 0.5);
+        }
+
+        tbody tr:nth-child(even):hover {
+            background: rgba(79, 110, 247, 0.06);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .badge-yes {
+            background: var(--accent-green-glow);
+            color: var(--accent-green);
+        }
+
+        .badge-no {
+            background: var(--accent-red-glow);
+            color: var(--accent-red);
+        }
+
+        .badge-priority {
+            background: var(--accent-purple-glow);
+            color: var(--accent-purple);
+        }
+
+        .badge-type {
+            background: var(--accent-cyan-glow);
+            color: var(--accent-cyan);
+        }
+
+        .empty-state {
+            padding: 48px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        /* =====================================================
+           FORM STYLES
+           ===================================================== */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+        }
+
+        .form-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-blue);
+            background: var(--bg-input-focus);
+            box-shadow: 0 0 0 3px var(--accent-blue-glow);
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        select.form-control option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* =====================================================
+           BUTTONS
+           ===================================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0);
+            transition: var(--transition);
+        }
+
+        .btn:hover::after {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), #6366f1);
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-blue-glow);
+            width: 100%;
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--accent-green), #10b981);
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-green-glow);
+            width: 100%;
+        }
+
+        .btn-orange {
+            background: linear-gradient(135deg, var(--accent-orange), #f97316);
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-orange-glow);
+            width: 100%;
+        }
+
+        .btn-cyan {
+            background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
+            color: white;
+            box-shadow: 0 4px 16px var(--accent-cyan-glow);
+            width: 100%;
+        }
+
+        .btn-large {
+            padding: 14px 36px;
+            font-size: 16px;
+            border-radius: var(--radius-md);
+        }
+
+        /* =====================================================
+           CENTER CARD (allocate / complete)
+           ===================================================== */
+        .center-card {
+            max-width: 560px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 48px 40px;
+            text-align: center;
+        }
+
+        .center-card .center-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 20px;
+        }
+
+        .center-card h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .center-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .result-box {
+            margin-top: 24px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: var(--text-primary);
+            min-height: 60px;
+            white-space: pre-wrap;
+            font-family: 'Inter', monospace;
+        }
+
+        .result-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-align: left;
+            margin-top: 20px;
+            margin-bottom: 6px;
+        }
+
+        .center-card .form-control {
+            max-width: 280px;
+            margin: 0 auto 16px;
+            text-align: center;
+        }
+
+        .center-card .btn {
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        /* =====================================================
+           TOAST NOTIFICATIONS
+           ===================================================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 14px 24px 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.4s ease, fadeOut 0.4s ease 3s forwards;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            min-width: 280px;
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #0d3320, #0a291c);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--accent-green);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #3b1111, #2d0f0f);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to   { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(40px); }
+        }
+
+        /* =====================================================
+           RESPONSIVE
+           ===================================================== */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .split-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-row">
+                <div class="logo-icon">T</div>
+                <span class="logo-text">TransitPro</span>
+            </div>
+            <div class="logo-subtitle">Route Optimization System</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-label">Navigation</div>
+
+            <button class="nav-btn active" onclick="showScreen('dashboard', this)" id="nav-dashboard">
+                <span class="nav-icon">📊</span> Dashboard
+            </button>
+            <button class="nav-btn" onclick="showScreen('stops', this)" id="nav-stops">
+                <span class="nav-icon">📍</span> Bus Stops
+            </button>
+            <button class="nav-btn" onclick="showScreen('buses', this)" id="nav-buses">
+                <span class="nav-icon">🚌</span> Bus Management
+            </button>
+            <button class="nav-btn" onclick="showScreen('demands', this)" id="nav-demands">
+                <span class="nav-icon">👥</span> Passenger Demands
+            </button>
+            <button class="nav-btn" onclick="showScreen('allocate', this)" id="nav-allocate">
+                <span class="nav-icon">✅</span> Bus Allocation
+            </button>
+            <button class="nav-btn" onclick="showScreen('complete', this)" id="nav-complete">
+                <span class="nav-icon">🔄</span> Complete Trip
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            v1.0 &nbsp;·&nbsp; Java Backend &nbsp;·&nbsp; Web Frontend
+        </div>
+    </aside>
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+    <div class="main-content">
+
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="page-title" id="pageTitle">Dashboard</div>
+            <div class="top-badge">System Online</div>
+        </div>
+
+        <div class="content-area">
+
+            <!-- ===============================================
+                 DASHBOARD SCREEN
+                 =============================================== -->
+            <div class="screen active" id="screen-dashboard">
+                <div class="screen-header">
+                    <h1>Dashboard</h1>
+                    <p>Real-time overview of your transport system</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">📍</div>
+                        <div class="stat-value" id="stat-stops">0</div>
+                        <div class="stat-label">Total Stops</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-icon">🚌</div>
+                        <div class="stat-value" id="stat-buses">0</div>
+                        <div class="stat-label">Total Buses</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="stat-available">0</div>
+                        <div class="stat-label">Available Buses</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-value" id="stat-demands">0</div>
+                        <div class="stat-label">Waiting Demands</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>💡 Quick Guide</h3>
+                    <ul>
+                        <li>Use the sidebar to navigate between different management screens.</li>
+                        <li>Add bus stops, buses, and passenger demands using the provided forms.</li>
+                        <li>Allocate available buses to the highest-priority waiting demand.</li>
+                        <li>Complete bus trips to make them available for new allocations.</li>
+                        <li>Dashboard statistics update automatically after every operation.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 BUS STOPS SCREEN
+                 =============================================== -->
+            <div class="screen" id="screen-stops">
+                <div class="screen-header">
+                    <h1>Bus Stops</h1>
+                    <p>View and manage all bus stops in the network</p>
+                </div>
+
+                <div class="split-layout">
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h3>All Stops</h3>
+                            <span class="table-count" id="stop-count">0 stops</span>
+                        </div>
+                        <div id="stop-table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Stop ID</th><th>Stop Name</th></tr>
+                                </thead>
+                                <tbody id="stop-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>➕ Add New Stop</h3>
+                        <div class="form-group">
+                            <label>Stop ID</label>
+                            <input type="number" class="form-control" id="inp-stop-id" placeholder="e.g. 6">
+                        </div>
+                        <div class="form-group">
+                            <label>Stop Name</label>
+                            <input type="text" class="form-control" id="inp-stop-name" placeholder="e.g. Airport">
+                        </div>
+                        <button class="btn btn-green" onclick="addStop()">Add Stop</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 BUS MANAGEMENT SCREEN
+                 =============================================== -->
+            <div class="screen" id="screen-buses">
+                <div class="screen-header">
+                    <h1>Bus Management</h1>
+                    <p>View fleet status and add new buses</p>
+                </div>
+
+                <div class="split-layout">
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h3>Fleet Overview</h3>
+                            <span class="table-count" id="bus-count">0 buses</span>
+                        </div>
+                        <div id="bus-table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Bus ID</th><th>Type</th><th>Capacity</th><th>Available</th></tr>
+                                </thead>
+                                <tbody id="bus-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>➕ Add New Bus</h3>
+                        <div class="form-group">
+                            <label>Bus ID</label>
+                            <input type="number" class="form-control" id="inp-bus-id" placeholder="e.g. 104">
+                        </div>
+                        <div class="form-group">
+                            <label>Bus Type</label>
+                            <select class="form-control" id="inp-bus-type">
+                                <option value="MiniBus">MiniBus</option>
+                                <option value="StandardBus">StandardBus</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Capacity</label>
+                            <input type="number" class="form-control" id="inp-bus-capacity" placeholder="e.g. 25">
+                        </div>
+                        <button class="btn btn-primary" onclick="addBus()">Add Bus</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 PASSENGER DEMANDS SCREEN
+                 =============================================== -->
+            <div class="screen" id="screen-demands">
+                <div class="screen-header">
+                    <h1>Passenger Demands</h1>
+                    <p>Add demand requests and view the waiting queue</p>
+                </div>
+
+                <div class="split-layout">
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h3>Waiting Queue</h3>
+                            <span class="table-count" id="demand-count">0 demands</span>
+                        </div>
+                        <div id="demand-table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Request ID</th><th>Pickup</th><th>Destination</th><th>Passengers</th><th>Priority</th></tr>
+                                </thead>
+                                <tbody id="demand-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>➕ Add New Demand</h3>
+                        <div class="form-group">
+                            <label>Request ID</label>
+                            <input type="number" class="form-control" id="inp-req-id" placeholder="e.g. 3">
+                        </div>
+                        <div class="form-group">
+                            <label>Pickup Stop</label>
+                            <select class="form-control" id="inp-pickup"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Destination</label>
+                            <select class="form-control" id="inp-dest"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Passengers</label>
+                            <input type="number" class="form-control" id="inp-passengers" placeholder="e.g. 15">
+                        </div>
+                        <button class="btn btn-orange" onclick="addDemand()">Add Demand</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 BUS ALLOCATION SCREEN
+                 =============================================== -->
+            <div class="screen" id="screen-allocate">
+                <div class="screen-header">
+                    <h1>Bus Allocation</h1>
+                    <p>Allocate available buses to the highest-priority demand</p>
+                </div>
+
+                <div class="center-card">
+                    <div class="center-icon" style="background: var(--accent-green-glow); color: var(--accent-green);">✅</div>
+                    <h2>Allocate a Bus</h2>
+                    <p>The system will automatically assign an available bus to the highest-priority waiting demand based on passenger count.</p>
+                    <button class="btn btn-green btn-large" onclick="allocateBus()">Allocate Bus</button>
+                    <div class="result-label">Result Output</div>
+                    <div class="result-box" id="allocate-result">Click "Allocate Bus" to begin allocation...</div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 COMPLETE TRIP SCREEN
+                 =============================================== -->
+            <div class="screen" id="screen-complete">
+                <div class="screen-header">
+                    <h1>Complete Bus Trip</h1>
+                    <p>Mark a bus trip as complete to make it available again</p>
+                </div>
+
+                <div class="center-card">
+                    <div class="center-icon" style="background: var(--accent-cyan-glow); color: var(--accent-cyan);">🔄</div>
+                    <h2>Complete a Trip</h2>
+                    <p>Enter the Bus ID below to mark its current trip as completed. The bus will become available for new allocations.</p>
+                    <input type="number" class="form-control" id="inp-complete-bus-id" placeholder="Enter Bus ID (e.g. 101)">
+                    <button class="btn btn-cyan btn-large" onclick="completeBusTrip()">Complete Trip</button>
+                    <div class="result-label">Result Output</div>
+                    <div class="result-box" id="complete-result">Enter a Bus ID and click "Complete Trip"...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- =====================================================
+         JAVASCRIPT
+         ===================================================== -->
+    <script>
+        const API = '';
+
+        // =================================================
+        // NAVIGATION
+        // =================================================
+        function showScreen(name, btn) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + name).classList.add('active');
+
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update top bar title
+            const titles = {
+                dashboard: 'Dashboard',
+                stops: 'Bus Stops',
+                buses: 'Bus Management',
+                demands: 'Passenger Demands',
+                allocate: 'Bus Allocation',
+                complete: 'Complete Trip'
+            };
+            document.getElementById('pageTitle').textContent = titles[name] || name;
+
+            // Refresh data
+            if (name === 'dashboard') loadDashboard();
+            if (name === 'stops')     loadStops();
+            if (name === 'buses')     loadBuses();
+            if (name === 'demands')   { loadDemands(); loadStopOptions(); }
+        }
+
+        // =================================================
+        // TOAST NOTIFICATIONS
+        // =================================================
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.innerHTML = (type === 'success' ? '✅' : '❌') + '&nbsp;&nbsp;' + message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        // =================================================
+        // DASHBOARD
+        // =================================================
+        async function loadDashboard() {
+            try {
+                const res = await fetch(API + '/api/dashboard');
+                const data = await res.json();
+                document.getElementById('stat-stops').textContent     = data.totalStops;
+                document.getElementById('stat-buses').textContent     = data.totalBuses;
+                document.getElementById('stat-available').textContent = data.availableBuses;
+                document.getElementById('stat-demands').textContent   = data.waitingDemands;
+            } catch (e) {
+                console.error('Dashboard load failed:', e);
+            }
+        }
+
+        // =================================================
+        // STOPS
+        // =================================================
+        async function loadStops() {
+            try {
+                const res = await fetch(API + '/api/stops');
+                const stops = await res.json();
+                const tbody = document.getElementById('stop-tbody');
+                document.getElementById('stop-count').textContent = stops.length + ' stops';
+
+                if (stops.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><div class="empty-icon">📍</div>No stops added yet</div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = stops.map(s =>
+                    `<tr><td>${s.id}</td><td>${s.name}</td></tr>`
+                ).join('');
+            } catch (e) {
+                console.error('Stops load failed:', e);
+            }
+        }
+
+        async function addStop() {
+            const id   = document.getElementById('inp-stop-id').value.trim();
+            const name = document.getElementById('inp-stop-name').value.trim();
+
+            if (!id || !name) { showToast('Please fill in all fields.', 'error'); return; }
+
+            try {
+                const res = await fetch(API + '/api/stops', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: parseInt(id), name })
+                });
+                const data = await res.json();
+
+                if (data.error) { showToast(data.error, 'error'); return; }
+
+                showToast('Stop "' + name + '" added!', 'success');
+                document.getElementById('inp-stop-id').value = '';
+                document.getElementById('inp-stop-name').value = '';
+                loadStops();
+                loadDashboard();
+            } catch (e) {
+                showToast('Failed to add stop.', 'error');
+            }
+        }
+
+        // =================================================
+        // BUSES
+        // =================================================
+        async function loadBuses() {
+            try {
+                const res = await fetch(API + '/api/buses');
+                const buses = await res.json();
+                const tbody = document.getElementById('bus-tbody');
+                document.getElementById('bus-count').textContent = buses.length + ' buses';
+
+                if (buses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🚌</div>No buses added yet</div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = buses.map(b =>
+                    `<tr>
+                        <td>${b.id}</td>
+                        <td><span class="badge badge-type">${b.type}</span></td>
+                        <td>${b.capacity}</td>
+                        <td><span class="badge ${b.available ? 'badge-yes' : 'badge-no'}">${b.available ? 'Yes' : 'No'}</span></td>
+                    </tr>`
+                ).join('');
+            } catch (e) {
+                console.error('Buses load failed:', e);
+            }
+        }
+
+        async function addBus() {
+            const id       = document.getElementById('inp-bus-id').value.trim();
+            const type     = document.getElementById('inp-bus-type').value;
+            const capacity = document.getElementById('inp-bus-capacity').value.trim();
+
+            if (!id || !capacity) { showToast('Please fill in all fields.', 'error'); return; }
+
+            try {
+                const res = await fetch(API + '/api/buses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: parseInt(id), type, capacity: parseInt(capacity) })
+                });
+                const data = await res.json();
+
+                if (data.error) { showToast(data.error, 'error'); return; }
+
+                showToast(type + ' (ID: ' + id + ') added!', 'success');
+                document.getElementById('inp-bus-id').value = '';
+                document.getElementById('inp-bus-capacity').value = '';
+                loadBuses();
+                loadDashboard();
+            } catch (e) {
+                showToast('Failed to add bus.', 'error');
+            }
+        }
+
+        // =================================================
+        // DEMANDS
+        // =================================================
+        async function loadDemands() {
+            try {
+                const res = await fetch(API + '/api/demands');
+                const demands = await res.json();
+                const tbody = document.getElementById('demand-tbody');
+                document.getElementById('demand-count').textContent = demands.length + ' demands';
+
+                if (demands.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div>No waiting demands</div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = demands.map(d =>
+                    `<tr>
+                        <td>${d.requestId}</td>
+                        <td>${d.pickup}</td>
+                        <td>${d.destination}</td>
+                        <td>${d.passengers}</td>
+                        <td><span class="badge badge-priority">#${d.priority}</span></td>
+                    </tr>`
+                ).join('');
+            } catch (e) {
+                console.error('Demands load failed:', e);
+            }
+        }
+
+        async function loadStopOptions() {
+            try {
+                const res = await fetch(API + '/api/stops');
+                const stops = await res.json();
+                const options = stops.map(s => `<option value="${s.id}">${s.id} - ${s.name}</option>`).join('');
+                document.getElementById('inp-pickup').innerHTML = options;
+                document.getElementById('inp-dest').innerHTML = options;
+            } catch (e) {
+                console.error('Stop options load failed:', e);
+            }
+        }
+
+        async function addDemand() {
+            const reqId      = document.getElementById('inp-req-id').value.trim();
+            const pickupId   = document.getElementById('inp-pickup').value;
+            const destId     = document.getElementById('inp-dest').value;
+            const passengers = document.getElementById('inp-passengers').value.trim();
+
+            if (!reqId || !passengers) { showToast('Please fill in all fields.', 'error'); return; }
+            if (pickupId === destId) { showToast('Pickup and destination cannot be the same.', 'error'); return; }
+
+            try {
+                const res = await fetch(API + '/api/demands', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requestId: parseInt(reqId),
+                        pickupId: parseInt(pickupId),
+                        destId: parseInt(destId),
+                        passengers: parseInt(passengers)
+                    })
+                });
+                const data = await res.json();
+
+                if (data.error) { showToast(data.error, 'error'); return; }
+
+                showToast('Demand #' + reqId + ' added!', 'success');
+                document.getElementById('inp-req-id').value = '';
+                document.getElementById('inp-passengers').value = '';
+                loadDemands();
+                loadDashboard();
+            } catch (e) {
+                showToast('Failed to add demand.', 'error');
+            }
+        }
+
+        // =================================================
+        // ALLOCATE BUS
+        // =================================================
+        async function allocateBus() {
+            try {
+                const res = await fetch(API + '/api/allocate', { method: 'POST' });
+                const data = await res.json();
+                document.getElementById('allocate-result').textContent = data.message || 'No output.';
+                showToast('Allocation complete!', 'success');
+                loadDashboard();
+                loadBuses();
+                loadDemands();
+            } catch (e) {
+                showToast('Allocation failed.', 'error');
+            }
+        }
+
+        // =================================================
+        // COMPLETE TRIP
+        // =================================================
+        async function completeBusTrip() {
+            const busId = document.getElementById('inp-complete-bus-id').value.trim();
+            if (!busId) { showToast('Please enter a Bus ID.', 'error'); return; }
+
+            try {
+                const res = await fetch(API + '/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ busId: parseInt(busId) })
+                });
+                const data = await res.json();
+
+                if (data.error) { showToast(data.error, 'error'); return; }
+
+                document.getElementById('complete-result').textContent = data.message || 'No output.';
+                showToast('Trip completed!', 'success');
+                document.getElementById('inp-complete-bus-id').value = '';
+                loadDashboard();
+                loadBuses();
+            } catch (e) {
+                showToast('Failed to complete trip.', 'error');
+            }
+        }
+
+        // =================================================
+        // INITIAL LOAD
+        // =================================================
+        loadDashboard();
+    </script>
+
+</body>
+</html>
